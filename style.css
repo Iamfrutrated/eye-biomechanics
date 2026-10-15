@@ -360,15 +360,13 @@ footer p {
   }
 
   .scene-shell {
-    aspect-ratio: 4 / 5;
-    min-height: 31rem;
+    aspect-ratio: 1440 / 850;
+    min-height: 0;
   }
 
   .room {
-    width: auto;
-    max-width: none;
+    width: 100%;
     height: 100%;
-    transform: translateX(calc((100% - 100vw) * 0.04));
   }
 
   .legend {
