@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A first-person, pre-optics view of light traveling through a room toward a seated viewer."
+      content="An educational room view with a seven-step thin-lens clarity model."
     />
     <title>Light in the Room</title>
     <link rel="stylesheet" href="style.css" />
@@ -95,7 +95,7 @@
           </g>
 
           <!-- A familiar distance vision-test board replaces the far-wall furniture. -->
-          <g class="vision-board" role="img" aria-label="Distance vision-test board with letters that decrease in size by row">
+          <g class="vision-board optics-target" role="img" aria-label="Distance vision-test board with letters that decrease in size by row">
             <rect x="573" y="216" width="294" height="315" rx="7" class="board-frame" />
             <rect x="589" y="232" width="262" height="283" rx="2" class="board-face" />
             <text x="720" y="257" class="board-heading">DISTANCE VISION</text>
@@ -166,6 +166,97 @@
           <span class="pause-icon" aria-hidden="true"></span>
           <span class="motion-label">Pause light motion</span>
         </button>
+      </section>
+
+      <section class="lens-panel" aria-labelledby="lens-panel-title">
+        <div class="lens-panel-copy">
+          <p class="panel-kicker">Simplified thin-lens model</p>
+          <h2 id="lens-panel-title">Explore chart clarity</h2>
+          <p>
+            Select a preset to move the calculated image distance relative to a fixed reference
+            plane. This educational model is not a clinical prescription or diagnostic result.
+          </p>
+        </div>
+
+        <fieldset class="preset-fieldset">
+          <legend>Lens preset spectrum</legend>
+          <div class="preset-spectrum">
+            <div class="preset-option">
+              <input type="radio" name="lens-preset" id="farsighted-3" value="farsighted-3" />
+              <label for="farsighted-3"><span>Farsighted</span><strong>3</strong></label>
+            </div>
+            <div class="preset-option">
+              <input type="radio" name="lens-preset" id="farsighted-2" value="farsighted-2" />
+              <label for="farsighted-2"><span>Farsighted</span><strong>2</strong></label>
+            </div>
+            <div class="preset-option">
+              <input type="radio" name="lens-preset" id="farsighted-1" value="farsighted-1" />
+              <label for="farsighted-1"><span>Farsighted</span><strong>1</strong></label>
+            </div>
+            <div class="preset-option neutral-option">
+              <input type="radio" name="lens-preset" id="neutral" value="neutral" checked />
+              <label for="neutral"><span>Neutral</span><strong>0</strong></label>
+            </div>
+            <div class="preset-option">
+              <input type="radio" name="lens-preset" id="nearsighted-1" value="nearsighted-1" />
+              <label for="nearsighted-1"><span>Nearsighted</span><strong>1</strong></label>
+            </div>
+            <div class="preset-option">
+              <input type="radio" name="lens-preset" id="nearsighted-2" value="nearsighted-2" />
+              <label for="nearsighted-2"><span>Nearsighted</span><strong>2</strong></label>
+            </div>
+            <div class="preset-option">
+              <input type="radio" name="lens-preset" id="nearsighted-3" value="nearsighted-3" />
+              <label for="nearsighted-3"><span>Nearsighted</span><strong>3</strong></label>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="model-readout" aria-live="polite" aria-atomic="true">
+          <div class="active-preset">
+            <span>Active preset</span>
+            <strong data-output="preset">Neutral</strong>
+          </div>
+          <dl>
+            <div>
+              <dt>Object distance, d<sub>o</sub></dt>
+              <dd data-output="object-distance">+6.00 m</dd>
+            </div>
+            <div>
+              <dt>Image distance, d<sub>i</sub></dt>
+              <dd data-output="image-distance">+24.0 mm</dd>
+            </div>
+            <div>
+              <dt>Focal length, f</dt>
+              <dd data-output="focal-length">+23.9 mm</dd>
+            </div>
+            <div>
+              <dt>Reference offset</dt>
+              <dd data-output="defocus">0.0 mm</dd>
+            </div>
+          </dl>
+        </div>
+
+        <details class="model-notes">
+          <summary>Equation, units, and sign convention</summary>
+          <div>
+            <p class="equation" aria-label="One over f equals one over d o plus one over d i">
+              1/f = 1/d<sub>o</sub> + 1/d<sub>i</sub>
+            </p>
+            <p>
+              All calculations use metres. The displayed board is fixed at d<sub>o</sub> =
+              +6.00 m. Distance is measured from the thin lens along the light path:
+              d<sub>o</sub> is positive for this real object, while d<sub>i</sub> and f are
+              positive for a real image beyond the lens.
+            </p>
+            <p>
+              Neutral uses a +24.0 mm reference plane. Farsighted levels place the calculated
+              image beyond that plane; nearsighted levels place it before the plane. Each level
+              changes d<sub>i</sub> by 0.6 mm. Blur is a qualitative display cue, not a prediction
+              of individual vision.
+            </p>
+          </div>
+        </details>
       </section>
 
       <footer>
