@@ -296,22 +296,12 @@ Before numerical results are presented as meaningful, the project should:
 Passing software tests alone does not establish physiological or clinical
 validity.
 
-## Contributing
-
-Contributions are welcome once contribution and review policies are defined.
-For now, a proposed change should:
-
-1. describe whether it affects UI, scientific content, or numerical behavior;
-2. distinguish implemented behavior from future plans;
-3. include sources and tests for scientific calculations;
-4. update this README when setup or usage changes; and
-5. avoid introducing dependencies without documenting why they are needed.
-
-Repository-specific issue templates, formatting commands, test commands, and
-pull-request requirements have not yet been configured.
-
 ## License
 
 No license file is present. Unless and until a license is added, no open-source
 license should be assumed. Contributors should confirm the intended licensing
 terms before distributing or reusing the project.
+
+## The Vision
+
+This project will have two parts. One part is the POV of a person sitting in a chair from their point of view. The how far the wall is from them is one of the parameters that can be changed. A second page of the website will show the lens and the anatomy of the eye and allow the user to have certain tweaks (need to be decided what can be changed). This will show the effect of myopia.
