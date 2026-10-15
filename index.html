@@ -1,1 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A first-person, pre-optics view of light traveling through a room toward a seated viewer."
+    />
+    <title>Light in the Room</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="experience">
+      <header class="scene-copy">
+        <p class="eyebrow">First-person view · seated</p>
+        <h1>Light travels across the room.</h1>
+        <p class="intro">
+          From this chair, visible paths trace light from the room toward your viewpoint.
+        </p>
+      </header>
 
+      <section class="scene-shell" aria-labelledby="scene-title">
+        <h2 id="scene-title" class="sr-only">A room viewed from a seated chair</h2>
+
+        <svg
+          class="room"
+          viewBox="0 0 1440 850"
+          role="img"
+          aria-labelledby="room-title room-description"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <title id="room-title">Light traveling through a room toward a seated viewer</title>
+          <desc id="room-description">
+            A first-person room scene with a window and lamp sending highlighted beams toward
+            the viewpoint. Chair arms appear at the bottom edges.
+          </desc>
+
+          <defs>
+            <linearGradient id="ceiling" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#17252d" />
+              <stop offset="1" stop-color="#243943" />
+            </linearGradient>
+            <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#243b41" />
+              <stop offset="1" stop-color="#0b1419" />
+            </linearGradient>
+            <linearGradient id="left-wall" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#12242c" />
+              <stop offset="1" stop-color="#3b5357" />
+            </linearGradient>
+            <linearGradient id="right-wall" x1="1" y1="0" x2="0" y2="0">
+              <stop offset="0" stop-color="#0d1c23" />
+              <stop offset="1" stop-color="#334b4f" />
+            </linearGradient>
+            <linearGradient id="sun-beam" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffe9a6" stop-opacity=".92" />
+              <stop offset=".42" stop-color="#f8d97e" stop-opacity=".38" />
+              <stop offset="1" stop-color="#f4c85b" stop-opacity=".04" />
+            </linearGradient>
+            <linearGradient id="lamp-beam" x1="1" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffb978" stop-opacity=".86" />
+              <stop offset=".45" stop-color="#ff9f61" stop-opacity=".28" />
+              <stop offset="1" stop-color="#ff9466" stop-opacity=".03" />
+            </linearGradient>
+            <radialGradient id="window-glow">
+              <stop offset="0" stop-color="#fff8cf" stop-opacity=".55" />
+              <stop offset="1" stop-color="#fff0a6" stop-opacity="0" />
+            </radialGradient>
+            <radialGradient id="viewpoint-glow">
+              <stop offset="0" stop-color="#f5cf76" stop-opacity=".23" />
+              <stop offset="1" stop-color="#f5cf76" stop-opacity="0" />
+            </radialGradient>
+            <filter id="soft-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="18" />
+            </filter>
+            <filter id="beam-soften" x="-10%" y="-10%" width="120%" height="120%">
+              <feGaussianBlur stdDeviation="3" />
+            </filter>
+            <filter id="small-glow" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="4" />
+            </filter>
+          </defs>
+
+          <!-- Architectural planes converge toward the back wall. -->
+          <path d="M0 0H1440L1045 188H395Z" fill="url(#ceiling)" />
+          <path d="M0 850H1440L1045 548H395Z" fill="url(#floor)" />
+          <path d="M0 0L395 188V548L0 850Z" fill="url(#left-wall)" />
+          <path d="M1440 0L1045 188V548L1440 850Z" fill="url(#right-wall)" />
+          <rect x="395" y="188" width="650" height="360" fill="#536967" />
+
+          <!-- Room depth lines and floor boards. -->
+          <g class="room-lines" fill="none" stroke="#8aa09a" stroke-opacity=".2">
+            <path d="M0 850L395 548M260 850L505 548M525 850L615 548M915 850L825 548M1180 850L935 548M1440 850L1045 548" />
+            <path d="M247 661H1193M128 754H1312" />
+            <path d="M0 0L395 188M1440 0L1045 188" />
+          </g>
+
+          <!-- Window, daylight source. -->
+          <ellipse cx="457" cy="300" rx="240" ry="215" fill="url(#window-glow)" filter="url(#soft-glow)" />
+          <g class="window">
+            <rect x="438" y="237" width="170" height="196" rx="3" fill="#172b32" stroke="#b8c8bd" stroke-width="8" />
+            <rect x="451" y="250" width="144" height="170" fill="#c7e5df" />
+            <path d="M523 250V420M451 335H595" stroke="#7a9691" stroke-width="7" />
+            <path d="M451 375L493 342L535 370L595 316V420H451Z" fill="#688b83" opacity=".76" />
+            <circle cx="565" cy="282" r="17" fill="#fff4b7" />
+          </g>
+
+          <!-- Furniture establishes scale and a lived-in room. -->
+          <g class="furniture">
+            <path d="M755 435H972L1010 548H728Z" fill="#27383a" />
+            <rect x="776" y="391" width="174" height="53" rx="4" fill="#819388" />
+            <path d="M755 436L745 558M972 436L992 558" stroke="#101b1e" stroke-width="15" />
+            <rect x="825" y="349" width="66" height="42" rx="3" fill="#bd8064" />
+            <path d="M858 349V331" stroke="#26383b" stroke-width="6" />
+            <path d="M794 390C811 358 828 360 842 390M902 390C920 356 934 360 944 390" fill="#6f8a76" />
+            <rect x="652" y="282" width="134" height="118" rx="3" fill="#23383c" stroke="#71857d" stroke-width="8" />
+            <path d="M669 382L703 311L727 346L753 322L770 382Z" fill="#617d71" />
+          </g>
+
+          <!-- Lamp, warm local source. -->
+          <g class="lamp">
+            <ellipse cx="1021" cy="373" rx="135" ry="155" fill="#ffab69" opacity=".18" filter="url(#soft-glow)" />
+            <path d="M1004 389H1056L1071 430H989Z" fill="#f8ad70" />
+            <path d="M1030 430V525M1000 529H1060" stroke="#18272a" stroke-width="9" />
+            <circle cx="1030" cy="405" r="8" fill="#fff1c2" filter="url(#small-glow)" />
+          </g>
+
+          <!-- Explicit light paths moving from each source toward the viewpoint. -->
+          <g class="beam-layer" filter="url(#beam-soften)">
+            <path class="light-beam beam-daylight" d="M451 254L595 254L1115 850H122Z" fill="url(#sun-beam)" />
+            <path class="light-beam beam-lamp" d="M1016 396L1043 396L1340 850H845Z" fill="url(#lamp-beam)" />
+          </g>
+
+          <g class="particles" aria-hidden="true">
+            <circle cx="537" cy="345" r="3" />
+            <circle cx="580" cy="418" r="2" />
+            <circle cx="641" cy="471" r="4" />
+            <circle cx="681" cy="548" r="2.5" />
+            <circle cx="774" cy="606" r="3" />
+            <circle cx="889" cy="693" r="4" />
+            <circle cx="1028" cy="492" r="2.5" />
+            <circle cx="1094" cy="580" r="3" />
+            <circle cx="1148" cy="676" r="2" />
+          </g>
+
+          <!-- Direction markers reinforce travel toward the viewer. -->
+          <g class="direction-markers" aria-hidden="true">
+            <path d="M654 479L693 491L674 525" />
+            <path d="M823 592L865 608L842 643" />
+            <path d="M1058 534L1091 551L1068 578" />
+          </g>
+
+          <ellipse cx="720" cy="824" rx="510" ry="190" fill="url(#viewpoint-glow)" />
+
+          <!-- Chair arms place the camera at seated height. -->
+          <g class="chair" aria-hidden="true">
+            <path d="M0 850V724C78 688 167 705 233 779L292 850Z" fill="#172026" />
+            <path d="M35 850V751C103 724 164 741 218 799L254 850Z" fill="#604d40" />
+            <path d="M1440 850V724C1362 688 1273 705 1207 779L1148 850Z" fill="#172026" />
+            <path d="M1405 850V751C1337 724 1276 741 1222 799L1186 850Z" fill="#604d40" />
+          </g>
+
+          <g class="viewpoint-label" aria-hidden="true">
+            <path d="M674 804H766" />
+            <path d="M720 788V824" />
+            <circle cx="720" cy="806" r="24" />
+          </g>
+        </svg>
+
+        <div class="scene-vignette" aria-hidden="true"></div>
+
+        <aside class="legend" aria-label="Scene key">
+          <span><i class="key key-daylight"></i>Window light</span>
+          <span><i class="key key-lamp"></i>Lamp light</span>
+          <span><i class="key key-path"></i>Direction toward you</span>
+        </aside>
+
+        <div class="viewpoint" aria-hidden="true">
+          <span>your seated viewpoint</span>
+        </div>
+
+        <button class="motion-toggle" type="button" aria-pressed="false">
+          <span class="pause-icon" aria-hidden="true"></span>
+          <span class="motion-label">Pause light motion</span>
+        </button>
+      </section>
+
+      <footer>
+        <p>Light sources → paths through the room → your viewpoint</p>
+      </footer>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
