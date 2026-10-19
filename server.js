@@ -27,7 +27,7 @@ function localPath(requestPath) {
   return pathname.endsWith("/") || relative === "" ? join(filePath, "index.html") : filePath;
 }
 
-const server = createServer(async (request, response) => {
+async function handleRequest(request, response) {
   try {
     const requested = localPath(request.url ?? "/");
     if (!requested) {
@@ -49,8 +49,38 @@ const server = createServer(async (request, response) => {
     response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     response.end("Not found");
   }
-});
+}
 
-server.listen(port, () => {
+function listen(host, ipv6Only = false) {
+  const server = createServer(handleRequest);
+
+  return new Promise((resolve, reject) => {
+    server.once("error", (error) => {
+      if (error.code === "EAFNOSUPPORT" || error.code === "EINVAL") {
+        resolve(null);
+        return;
+      }
+      reject(error);
+    });
+    server.listen({ port, host, ipv6Only }, () => resolve(server));
+  });
+}
+
+try {
+  // Browsers resolve localhost to ::1 before 127.0.0.1. Listen on both so the
+  // first address does not fail with connection refused.
+  const ipv4 = await listen("0.0.0.0");
+  const ipv6 = await listen("::", true);
+
+  if (!ipv4 && !ipv6) {
+    throw new Error("No local network address was available.");
+  }
+
   console.log(`Eye biomechanics is available at http://localhost:${port}`);
-});
+} catch (error) {
+  if (error.code === "EADDRINUSE") {
+    console.error(`Port ${port} is already in use. Stop that process or run PORT=4180 npm start.`);
+    process.exit(1);
+  }
+  throw error;
+}
