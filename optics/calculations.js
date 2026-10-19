@@ -57,3 +57,123 @@ export function calculatePreset(presetId) {
     chartOpacity: 1 - severity * 0.055,
   });
 }
+
+export const RAY_DEFAULTS = Object.freeze({
+  focalLengthM: 0.45,
+  launchAngleRad: 0,
+  sourceHeightM: 0.06,
+});
+
+export const RAY_LIMITS = Object.freeze({
+  minFocalLengthM: -1,
+  maxFocalLengthM: 1,
+  minLaunchAngleRad: -Math.PI / 3,
+  maxLaunchAngleRad: Math.PI / 3,
+  minSourceHeightM: -0.2,
+  maxSourceHeightM: 0.2,
+  paraxialLimitRad: 0.175,
+  lensXM: 1,
+  apertureHalfHeightM: 0.26,
+});
+
+function finiteValue(value, label) {
+  const numeric = Number(value);
+
+  if (!Number.isFinite(numeric)) {
+    throw new RangeError(`${label} must be a finite number.`);
+  }
+
+  return numeric;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * +x points from the source toward the lens and +y points up.
+ * Angles are measured counterclockwise from +x.
+ * At the lens, θ_out = θ_in − y/f. Distances are metres and angles are radians.
+ * f > 0 converges; f < 0 diverges. The geometric path uses tan(θ), while the
+ * transfer itself remains the paraxial relation even when the selected angle is not.
+ */
+export function normalizeRayInput(input) {
+  const focalLengthM = clamp(
+    finiteValue(input.focalLengthM, "Focal length"),
+    RAY_LIMITS.minFocalLengthM,
+    RAY_LIMITS.maxFocalLengthM,
+  );
+  const launchAngleRad = clamp(
+    finiteValue(input.launchAngleRad, "Launch angle"),
+    RAY_LIMITS.minLaunchAngleRad,
+    RAY_LIMITS.maxLaunchAngleRad,
+  );
+  const sourceHeightM = clamp(
+    finiteValue(input.sourceHeightM, "Source height"),
+    RAY_LIMITS.minSourceHeightM,
+    RAY_LIMITS.maxSourceHeightM,
+  );
+
+  return { focalLengthM, launchAngleRad, sourceHeightM };
+}
+
+export function calculateRay(input) {
+  const values = normalizeRayInput(input);
+  const { focalLengthM, launchAngleRad, sourceHeightM } = values;
+  const lensHeightM = sourceHeightM + RAY_LIMITS.lensXM * Math.tan(launchAngleRad);
+  const missesAperture = Math.abs(lensHeightM) > RAY_LIMITS.apertureHalfHeightM;
+  const transferDefined = Math.abs(focalLengthM) >= 1e-9;
+  let outgoingAngleRad = null;
+  let intersectionKind = "undefined";
+  let intersectionXM = null;
+  let status = "Focal length is zero, so the lens transfer is undefined.";
+
+  if (!transferDefined) {
+    status = "Focal length is zero, so the lens transfer is undefined.";
+  } else if (missesAperture) {
+    outgoingAngleRad = launchAngleRad;
+    status = "The ray misses the lens aperture and continues straight.";
+  } else {
+    outgoingAngleRad = launchAngleRad - lensHeightM / focalLengthM;
+    status = "The ray reaches the lens.";
+  }
+
+  const forwardRay =
+    outgoingAngleRad !== null && Math.abs(outgoingAngleRad) < Math.PI / 2 - 0.02;
+
+  if (outgoingAngleRad !== null && !forwardRay) {
+    intersectionKind = "undefined";
+    status = "The outgoing angle is too steep to draw as a forward ray.";
+  } else if (forwardRay) {
+    const slope = Math.tan(outgoingAngleRad);
+
+    if (Math.abs(slope) < 1e-4) {
+      intersectionKind = "parallel";
+      status = missesAperture
+        ? "The missed ray continues parallel to the optical axis."
+        : "The outgoing ray is parallel to the optical axis.";
+    } else {
+      intersectionXM = RAY_LIMITS.lensXM + (0 - lensHeightM) / slope;
+      intersectionKind = intersectionXM < RAY_LIMITS.lensXM ? "virtual" : "real";
+      status =
+        intersectionKind === "virtual"
+          ? "The axis intersection is virtual, on the source side of the lens."
+          : "The ray crosses the optical axis after the lens.";
+    }
+  }
+
+  const paraxialValid =
+    Math.abs(launchAngleRad) <= RAY_LIMITS.paraxialLimitRad &&
+    (outgoingAngleRad === null || Math.abs(outgoingAngleRad) <= RAY_LIMITS.paraxialLimitRad);
+
+  return Object.freeze({
+    ...values,
+    lensHeightM,
+    outgoingAngleRad,
+    intersectionXM,
+    intersectionKind,
+    missesAperture,
+    paraxialValid,
+    status,
+  });
+}

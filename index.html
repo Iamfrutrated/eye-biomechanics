@@ -21,7 +21,8 @@
         </p>
       </header>
 
-      <section class="scene-shell" aria-labelledby="scene-title">
+      <div class="visual-workspace">
+        <section class="scene-shell" aria-labelledby="scene-title">
         <h2 id="scene-title" class="sr-only">A room viewed from a seated chair</h2>
 
         <svg
@@ -166,7 +167,181 @@
           <span class="pause-icon" aria-hidden="true"></span>
           <span class="motion-label">Pause light motion</span>
         </button>
-      </section>
+        </section>
+
+        <aside class="ray-simulator" aria-labelledby="ray-simulator-title">
+          <div class="ray-simulator-heading">
+            <p class="panel-kicker">2D ray simulator</p>
+            <h2 id="ray-simulator-title">Launch a ray</h2>
+            <p>
+              Adjust a ray before it reaches a signed thin lens. The diagram uses a simplified
+              paraxial transfer at the lens.
+            </p>
+          </div>
+
+          <svg
+            class="ray-canvas"
+            viewBox="0 0 600 420"
+            role="img"
+            aria-labelledby="ray-canvas-title ray-canvas-description"
+          >
+            <title id="ray-canvas-title">Interactive thin-lens ray diagram</title>
+            <desc id="ray-canvas-description">
+              A source on the left launches a ray toward a thin lens on the right. Incident and
+              outgoing ray segments update with the controls.
+            </desc>
+            <defs>
+              <linearGradient id="ray-lens-fill" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#6bb9c4" stop-opacity=".22" />
+                <stop offset=".5" stop-color="#d5fbff" stop-opacity=".72" />
+                <stop offset="1" stop-color="#6bb9c4" stop-opacity=".22" />
+              </linearGradient>
+              <filter id="ray-glow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <clipPath id="ray-viewport-clip">
+                <rect x="36" y="40" width="528" height="310" rx="8" />
+              </clipPath>
+            </defs>
+
+            <rect x="36" y="40" width="528" height="310" rx="8" class="ray-plot-bg" />
+            <g clip-path="url(#ray-viewport-clip)">
+              <path d="M36 195H564" class="ray-axis" />
+              <path d="M36 92H564M36 298H564" class="ray-grid-line" />
+
+              <g class="focal-guides" aria-hidden="true">
+                <path data-ray-guide="left" class="focal-guide" />
+                <path data-ray-guide="right" class="focal-guide" />
+                <text data-ray-guide-label="left" class="guide-label">F</text>
+                <text data-ray-guide-label="right" class="guide-label">F′</text>
+              </g>
+
+              <g class="source-mark" aria-hidden="true">
+                <path data-ray-source-stem class="source-stem" />
+                <path data-ray-source-cap class="source-cap" />
+                <circle data-ray-source-point r="7" />
+              </g>
+
+              <g class="thin-lens-mark" aria-hidden="true">
+                <path d="M382 57V333" class="lens-line" />
+                <path d="M370 70L382 52L394 70M370 320L382 338L394 320" class="lens-arrows" />
+              </g>
+
+              <path data-ray-segment="incident" class="ray-segment incident-ray" />
+              <path data-ray-segment="outgoing" class="ray-segment outgoing-ray" />
+              <path data-ray-segment="extension" class="ray-extension" />
+              <circle data-ray-intersection r="7" class="ray-intersection" />
+            </g>
+
+            <text x="46" y="28" class="plot-label">SOURCE</text>
+            <text x="382" y="28" class="plot-label lens-label">THIN LENS</text>
+            <text x="550" y="374" class="axis-label">+x</text>
+            <text x="46" y="374" class="axis-label">y = 0</text>
+          </svg>
+
+          <form class="ray-controls">
+            <div class="ray-control">
+              <div class="control-label-row">
+                <label for="ray-focal-length">Signed focal length, f</label>
+                <output for="ray-focal-length" data-ray-output="focal-length">+0.45 m</output>
+              </div>
+              <input
+                type="range"
+                id="ray-focal-length"
+                name="focalLengthM"
+                min="-1"
+                max="1"
+                step="0.01"
+                value="0.45"
+                aria-describedby="ray-validity-warning"
+              />
+              <div class="range-ends" aria-hidden="true">
+                <span>−1.00 m diverging</span><span>0</span><span>+1.00 m converging</span>
+              </div>
+            </div>
+
+            <div class="ray-control">
+              <div class="control-label-row">
+                <label for="ray-launch-angle">Launch angle, θ<sub>in</sub></label>
+                <output for="ray-launch-angle" data-ray-output="launch-angle">0.000 rad</output>
+              </div>
+              <input
+                type="range"
+                id="ray-launch-angle"
+                name="launchAngleRad"
+                min="-1.0471975512"
+                max="1.0471975512"
+                step="0.001"
+                value="0"
+                aria-describedby="ray-validity-warning"
+              />
+              <div class="range-ends" aria-hidden="true">
+                <span>−π/3 down</span><span>0 horizontal</span><span>+π/3 up</span>
+              </div>
+            </div>
+
+            <div class="ray-control">
+              <div class="control-label-row">
+                <label for="ray-source-height">Source height, y<sub>0</sub></label>
+                <output for="ray-source-height" data-ray-output="source-height">+0.060 m</output>
+              </div>
+              <input
+                type="range"
+                id="ray-source-height"
+                name="sourceHeightM"
+                min="-0.2"
+                max="0.2"
+                step="0.005"
+                value="0.06"
+                aria-describedby="ray-validity-warning"
+              />
+              <div class="range-ends" aria-hidden="true">
+                <span>Bottom −0.20 m</span><span>Middle 0</span><span>Top +0.20 m</span>
+              </div>
+            </div>
+
+            <button type="button" class="ray-reset">Reset ray defaults</button>
+          </form>
+
+          <dl class="ray-readout">
+            <div>
+              <dt>Height at lens</dt>
+              <dd data-ray-output="lens-height">+0.060 m</dd>
+            </div>
+            <div>
+              <dt>Outgoing angle</dt>
+              <dd data-ray-output="outgoing-angle">−0.133 rad</dd>
+            </div>
+            <div>
+              <dt>Axis intersection</dt>
+              <dd data-ray-output="intersection">+1.45 m</dd>
+            </div>
+          </dl>
+
+          <p class="validity-warning" id="ray-validity-warning">
+            <strong>Validity limit:</strong> this is a paraxial teaching model. Angles beyond
+            ±0.175 rad (about ±10°)—including much of the available ±π/3 range—are shown for
+            exploration but are not physically reliable predictions.
+          </p>
+          <p class="ray-status" data-ray-status aria-live="polite">
+            Default ray reaches the lens and intersects the axis.
+          </p>
+
+          <details class="ray-model-notes">
+            <summary>Coordinates and transfer rule</summary>
+            <p>
+              +x points right from the source toward the lens; +y points upward. Angles are
+              measured from +x, counterclockwise positive. At x = 1.00 m, the model applies
+              θ<sub>out</sub> = θ<sub>in</sub> − y/f. Paths are drawn with tan(θ); f &gt; 0 is
+              converging and f &lt; 0 is diverging.
+            </p>
+          </details>
+        </aside>
+      </div>
 
       <section class="lens-panel" aria-labelledby="lens-panel-title">
         <div class="lens-panel-copy">
