@@ -8,7 +8,8 @@ export const RAY_PLOT = Object.freeze({
 });
 
 function formatSigned(value, fractionDigits) {
-  const normalized = Object.is(value, -0) ? 0 : value;
+  const tolerance = 0.5 * 10 ** -fractionDigits;
+  const normalized = Math.abs(value) < tolerance || Object.is(value, -0) ? 0 : value;
   const sign = normalized > 0 ? "+" : "";
 
   return `${sign}${normalized.toFixed(fractionDigits)}`;
