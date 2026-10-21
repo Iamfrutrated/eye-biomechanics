@@ -3,7 +3,7 @@ export const RAY_PLOT = Object.freeze({
   lensX: 290,
   axisY: 188,
   scaleX: 140,
-  scaleY: 620,
+  scaleY: 860,
   bounds: Object.freeze({ xMin: 28, yMin: 36, xMax: 572, yMax: 332 }),
 });
 
@@ -83,7 +83,6 @@ function screenSegment(x0, y0, x1, y1) {
 function lensOutline(focalLengthM) {
   const [cx, cy] = worldToScreen(1, 0);
   const height = 112;
-  const width = 30;
 
   if (Math.abs(focalLengthM) < 1e-9) {
     return {
@@ -93,15 +92,22 @@ function lensOutline(focalLengthM) {
   }
 
   if (focalLengthM > 0) {
+    const bulge = 48;
+
     return {
       shape: "convex",
-      d: `M${cx} ${cy - height} C${cx - width * 1.8} ${cy - height * 0.35}, ${cx - width * 1.8} ${cy + height * 0.35}, ${cx} ${cy + height} C${cx + width * 1.8} ${cy + height * 0.35}, ${cx + width * 1.8} ${cy - height * 0.35}, ${cx} ${cy - height}Z`,
+      d: `M${cx} ${cy - height} C${cx - bulge} ${cy - 72}, ${cx - bulge} ${cy + 72}, ${cx} ${cy + height} C${cx + bulge} ${cy + 72}, ${cx + bulge} ${cy - 72}, ${cx} ${cy - height}Z`,
     };
   }
 
+  const rim = 22;
+  const waist = 7;
+  const top = cy - height;
+  const bottom = cy + height;
+
   return {
     shape: "concave",
-    d: `M${cx} ${cy - height} C${cx + width} ${cy - height + 18}, ${cx + 12} ${cy - 28}, ${cx + 9} ${cy} C${cx + 12} ${cy + 28}, ${cx + width} ${cy + height - 18}, ${cx} ${cy + height} C${cx - width} ${cy + height - 18}, ${cx - 12} ${cy + 28}, ${cx - 9} ${cy} C${cx - 12} ${cy - 28}, ${cx - width} ${cy - height + 18}, ${cx} ${cy - height}Z`,
+    d: `M${cx - rim} ${top} C${cx - waist} ${top + 34}, ${cx - waist} ${cy - 22}, ${cx - waist} ${cy} C${cx - waist} ${cy + 22}, ${cx - waist} ${bottom - 34}, ${cx - rim} ${bottom} L${cx + rim} ${bottom} C${cx + waist} ${bottom - 34}, ${cx + waist} ${cy + 22}, ${cx + waist} ${cy} C${cx + waist} ${cy - 22}, ${cx + waist} ${top + 34}, ${cx + rim} ${top}Z`,
   };
 }
 

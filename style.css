@@ -431,8 +431,8 @@ h1 {
 
 .object-arrow,
 .image-arrow {
-  stroke: #f7f4ea;
-  stroke-width: 2.6;
+  stroke: #fff1a8;
+  stroke-width: 3.4;
   marker-end: url("#ray-arrow");
 }
 

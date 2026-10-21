@@ -216,14 +216,6 @@
             <g clip-path="url(#ray-viewport-clip)">
               <path d="M28 188H572" class="ray-axis" />
 
-              <g class="focal-guides" aria-hidden="true">
-                <path data-ray-ticks class="focal-tick" />
-                <text data-ray-tick="0" class="guide-label"></text>
-                <text data-ray-tick="1" class="guide-label"></text>
-                <text data-ray-tick="2" class="guide-label"></text>
-                <text data-ray-tick="3" class="guide-label"></text>
-              </g>
-
               <path data-ray-screen class="image-screen" />
               <path data-ray-lens class="lens-body" />
 
@@ -239,6 +231,13 @@
               <path data-ray-image class="image-arrow" />
               <text data-ray-object-label class="diagram-caption">Object</text>
               <text data-ray-image-label class="diagram-caption">Image</text>
+              <g class="focal-guides" aria-hidden="true">
+                <path data-ray-ticks class="focal-tick" />
+                <text data-ray-tick="0" class="guide-label"></text>
+                <text data-ray-tick="1" class="guide-label"></text>
+                <text data-ray-tick="2" class="guide-label"></text>
+                <text data-ray-tick="3" class="guide-label"></text>
+              </g>
               <circle data-ray-intersection r="5" class="ray-intersection" />
             </g>
 
