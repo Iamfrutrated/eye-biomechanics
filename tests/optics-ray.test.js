@@ -63,6 +63,27 @@ test("full-range angle remains drawable while marked outside paraxial validity",
   assert.equal(typeof graphics.outgoing, "string");
 });
 
+test("shaped lens, focal ticks, and real image follow the thin-lens drawing", () => {
+  const convex = calculateRay(RAY_DEFAULTS);
+  const convexGraphics = buildRayGraphics(convex);
+  const concave = calculateRay({ focalLengthM: -0.45, launchAngleRad: 0, sourceHeightM: 0.12 });
+  const concaveGraphics = buildRayGraphics(concave);
+  const denominator = 1 / RAY_DEFAULTS.focalLengthM - 1 / RAY_LIMITS.lensXM;
+
+  assert.equal(convexGraphics.lens.shape, "convex");
+  assert.match(convexGraphics.lens.d, /C/);
+  assert.equal(concaveGraphics.lens.shape, "concave");
+  assert.ok(convex.imageReal);
+  assert.ok(Math.abs(1 / convex.imageDistanceM - denominator) < 1e-9);
+  assert.equal(concave.imageReal, false);
+  assert.ok(convexGraphics.ticks.some((tick) => tick.label === "F"));
+  assert.ok(convexGraphics.ticks.some((tick) => tick.label === "2F"));
+  assert.match(convexGraphics.objectArrow, /^M/);
+  assert.match(convexGraphics.imageArrow, /^M/);
+  assert.match(convexGraphics.imageScreen, /^M/);
+  assert.equal(concaveGraphics.imageArrow, "");
+});
+
 test("a diverging lens sends the default-height ray to a virtual intersection", () => {
   const ray = calculateRay({ focalLengthM: -0.45, launchAngleRad: 0, sourceHeightM: 0.12 });
 

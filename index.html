@@ -187,8 +187,9 @@
           >
             <title id="ray-canvas-title">Interactive thin-lens ray diagram</title>
             <desc id="ray-canvas-description">
-              A source on the left launches a ray toward a thin lens on the right. Incident and
-              outgoing ray segments update with the controls.
+              An upright object arrow stands on the optical axis to the left of a shaped thin
+              lens. F and 2F ticks mark both sides. Incident and refracted rays update with the
+              controls, and a real image appears on a screen when the thin-lens image is real.
             </desc>
             <defs>
               <linearGradient id="ray-lens-fill" x1="0" y1="0" x2="1" y2="0">
@@ -203,6 +204,9 @@
                   <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
+              <marker id="ray-arrow" viewBox="0 0 8 8" markerWidth="7" markerHeight="7" refX="7" refY="4" orient="auto">
+                <path d="M0 0L8 4L0 8Z" class="ray-arrow-head" />
+              </marker>
               <clipPath id="ray-viewport-clip">
                 <rect x="36" y="40" width="528" height="310" rx="8" />
               </clipPath>
@@ -210,35 +214,36 @@
 
             <rect x="36" y="40" width="528" height="310" rx="8" class="ray-plot-bg" />
             <g clip-path="url(#ray-viewport-clip)">
-              <path d="M36 195H564" class="ray-axis" />
-              <path d="M36 92H564M36 298H564" class="ray-grid-line" />
+              <path d="M28 188H572" class="ray-axis" />
 
               <g class="focal-guides" aria-hidden="true">
-                <path data-ray-guide="left" class="focal-guide" />
-                <path data-ray-guide="right" class="focal-guide" />
-                <text data-ray-guide-label="left" class="guide-label">F</text>
-                <text data-ray-guide-label="right" class="guide-label">F′</text>
+                <path data-ray-ticks class="focal-tick" />
+                <text data-ray-tick="0" class="guide-label"></text>
+                <text data-ray-tick="1" class="guide-label"></text>
+                <text data-ray-tick="2" class="guide-label"></text>
+                <text data-ray-tick="3" class="guide-label"></text>
               </g>
 
-              <g class="source-mark" aria-hidden="true">
-                <path data-ray-source-stem class="source-stem" />
-                <path data-ray-source-cap class="source-cap" />
-                <circle data-ray-source-point r="7" />
-              </g>
+              <path data-ray-screen class="image-screen" />
+              <path data-ray-lens class="lens-body" />
 
-              <g class="thin-lens-mark" aria-hidden="true">
-                <path d="M382 57V333" class="lens-line" />
-                <path d="M370 70L382 52L394 70M370 320L382 338L394 320" class="lens-arrows" />
-              </g>
-
+              <path data-ray-segment="parallel-incident" class="ray-segment principal-ray" />
+              <path data-ray-segment="parallel-outgoing" class="ray-segment principal-ray" />
+              <path data-ray-segment="parallel-extension" class="ray-extension" />
+              <path data-ray-segment="center" class="ray-segment principal-ray" />
               <path data-ray-segment="incident" class="ray-segment incident-ray" />
               <path data-ray-segment="outgoing" class="ray-segment outgoing-ray" />
               <path data-ray-segment="extension" class="ray-extension" />
-              <circle data-ray-intersection r="7" class="ray-intersection" />
+
+              <path data-ray-object class="object-arrow" />
+              <path data-ray-image class="image-arrow" />
+              <text data-ray-object-label class="diagram-caption">Object</text>
+              <text data-ray-image-label class="diagram-caption">Image</text>
+              <circle data-ray-intersection r="5" class="ray-intersection" />
             </g>
 
-            <text x="46" y="28" class="plot-label">SOURCE</text>
-            <text x="382" y="28" class="plot-label lens-label">THIN LENS</text>
+            <text x="46" y="28" class="plot-label">OBJECT</text>
+            <text x="300" y="28" class="plot-label lens-label">THIN LENS</text>
             <text x="550" y="374" class="axis-label">+x</text>
             <text x="46" y="374" class="axis-label">y = 0</text>
           </svg>

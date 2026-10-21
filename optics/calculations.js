@@ -165,6 +165,7 @@ export function calculateRay(input) {
   const paraxialValid =
     Math.abs(launchAngleRad) <= RAY_LIMITS.paraxialLimitRad &&
     (outgoingAngleRad === null || Math.abs(outgoingAngleRad) <= RAY_LIMITS.paraxialLimitRad);
+  const image = imageOfObject(focalLengthM, sourceHeightM);
 
   return Object.freeze({
     ...values,
@@ -174,6 +175,41 @@ export function calculateRay(input) {
     intersectionKind,
     missesAperture,
     paraxialValid,
+    ...image,
     status,
   });
+}
+
+/**
+ * Object distance is the fixed source-to-lens distance. Image distance follows
+ * 1/f = 1/d_o + 1/d_i. A positive d_i is a real image beyond the lens.
+ * Magnification is −d_i/d_o. This remains the thin-lens result; lens thickness
+ * in the diagram is only a drawing.
+ */
+function imageOfObject(focalLengthM, objectHeightM) {
+  const empty = {
+    imageDistanceM: null,
+    imageXM: null,
+    imageHeightM: null,
+    imageReal: false,
+  };
+
+  if (Math.abs(focalLengthM) < 1e-9) {
+    return empty;
+  }
+
+  const denominator = 1 / focalLengthM - 1 / RAY_LIMITS.lensXM;
+
+  if (Math.abs(denominator) < 1e-6) {
+    return empty;
+  }
+
+  const imageDistanceM = 1 / denominator;
+
+  return {
+    imageDistanceM,
+    imageXM: RAY_LIMITS.lensXM + imageDistanceM,
+    imageHeightM: (-imageDistanceM / RAY_LIMITS.lensXM) * objectHeightM,
+    imageReal: imageDistanceM > 0.02,
+  };
 }

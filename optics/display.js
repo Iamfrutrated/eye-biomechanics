@@ -1,10 +1,10 @@
 export const RAY_PLOT = Object.freeze({
-  sourceX: 78,
-  lensX: 382,
-  axisY: 195,
-  scaleX: 304,
-  scaleY: 520,
-  bounds: Object.freeze({ xMin: 36, yMin: 40, xMax: 564, yMax: 350 }),
+  sourceX: 150,
+  lensX: 290,
+  axisY: 188,
+  scaleX: 140,
+  scaleY: 620,
+  bounds: Object.freeze({ xMin: 28, yMin: 36, xMax: 572, yMax: 332 }),
 });
 
 function formatSigned(value, fractionDigits) {
@@ -73,17 +73,123 @@ function insidePlot(x, y) {
   return x >= bounds.xMin && x <= bounds.xMax && y >= bounds.yMin && y <= bounds.yMax;
 }
 
+function screenSegment(x0, y0, x1, y1) {
+  const [sx0, sy0] = worldToScreen(x0, y0);
+  const [sx1, sy1] = worldToScreen(x1, y1);
+
+  return pathFromSegment(clipSegment(sx0, sy0, sx1, sy1));
+}
+
+function lensOutline(focalLengthM) {
+  const [cx, cy] = worldToScreen(1, 0);
+  const height = 112;
+  const width = 30;
+
+  if (Math.abs(focalLengthM) < 1e-9) {
+    return {
+      shape: "none",
+      d: `M${cx - 6} ${cy - height}H${cx + 6}V${cy + height}H${cx - 6}Z`,
+    };
+  }
+
+  if (focalLengthM > 0) {
+    return {
+      shape: "convex",
+      d: `M${cx} ${cy - height} C${cx - width * 1.8} ${cy - height * 0.35}, ${cx - width * 1.8} ${cy + height * 0.35}, ${cx} ${cy + height} C${cx + width * 1.8} ${cy + height * 0.35}, ${cx + width * 1.8} ${cy - height * 0.35}, ${cx} ${cy - height}Z`,
+    };
+  }
+
+  return {
+    shape: "concave",
+    d: `M${cx} ${cy - height} C${cx + width} ${cy - height + 18}, ${cx + 12} ${cy - 28}, ${cx + 9} ${cy} C${cx + 12} ${cy + 28}, ${cx + width} ${cy + height - 18}, ${cx} ${cy + height} C${cx - width} ${cy + height - 18}, ${cx - 12} ${cy + 28}, ${cx - 9} ${cy} C${cx - 12} ${cy - 28}, ${cx - width} ${cy - height + 18}, ${cx} ${cy - height}Z`,
+  };
+}
+
+function focalTicks(focalLengthM) {
+  const distance = Math.abs(focalLengthM);
+
+  if (distance < 1e-9) {
+    return [];
+  }
+
+  return [-2, -1, 1, 2]
+    .map((multiple) => {
+      const worldX = 1 + multiple * distance;
+      const [x] = worldToScreen(worldX, 0);
+
+      if (x < RAY_PLOT.bounds.xMin + 10 || x > RAY_PLOT.bounds.xMax - 10) {
+        return null;
+      }
+      if (Math.abs(x - RAY_PLOT.lensX) < 16) {
+        return null;
+      }
+
+      return {
+        x,
+        label: Math.abs(multiple) === 1 ? "F" : "2F",
+        d: `M${x.toFixed(2)} ${RAY_PLOT.axisY - 7}V${RAY_PLOT.axisY + 7}`,
+      };
+    })
+    .filter(Boolean);
+}
+
+function imageScreen(model) {
+  if (!model.imageReal || model.imageXM === null) {
+    return { screen: "", arrow: "", labelX: null };
+  }
+
+  const [planeX, planeY] = worldToScreen(model.imageXM, 0);
+
+  if (planeX < RAY_PLOT.bounds.xMin + 16 || planeX > RAY_PLOT.bounds.xMax - 16) {
+    return { screen: "", arrow: "", labelX: null };
+  }
+
+  const [tipX, tipY] = worldToScreen(model.imageXM, model.imageHeightM ?? 0);
+  const top = RAY_PLOT.axisY - 78;
+  const bottom = RAY_PLOT.axisY + 78;
+
+  return {
+    screen: `M${(planeX - 16).toFixed(2)} ${top}L${(planeX + 10).toFixed(2)} ${top + 16}L${(planeX + 22).toFixed(2)} ${bottom - 8}L${(planeX - 8).toFixed(2)} ${bottom}Z`,
+    arrow: Math.abs(model.imageHeightM ?? 0) < 0.004 ? "" : `M${planeX.toFixed(2)} ${planeY.toFixed(2)}L${tipX.toFixed(2)} ${tipY.toFixed(2)}`,
+    labelX: planeX,
+  };
+}
+
 export function buildRayGraphics(model) {
   const [sourceX, sourceY] = worldToScreen(0, model.sourceHeightM);
   const [lensX, lensY] = worldToScreen(1, model.lensHeightM);
+  const [baseX, baseY] = worldToScreen(0, 0);
   const incident = pathFromSegment(clipSegment(sourceX, sourceY, lensX, lensY));
   let outgoing = "";
   let extension = "";
   let intersection = null;
+  const objectHeight = model.sourceHeightM;
+  const parallelIncident = Math.abs(objectHeight) < 0.004 ? "" : screenSegment(0, objectHeight, 1, objectHeight);
+  let parallelOutgoing = "";
+  let parallelExtension = "";
+  const center =
+    Math.abs(objectHeight) < 0.004
+      ? ""
+      : screenSegment(0, objectHeight, 2.6, objectHeight + 1.6 * -objectHeight);
+
+  if (Math.abs(model.focalLengthM) >= 1e-9 && Math.abs(objectHeight) >= 0.004) {
+    const slope = -objectHeight / model.focalLengthM;
+    const [farX, farY] = worldToScreen(3, objectHeight + 2 * slope);
+
+    parallelOutgoing = pathFromSegment(clipSegment(RAY_PLOT.lensX, worldToScreen(1, objectHeight)[1], farX, farY));
+
+    if (model.focalLengthM < 0) {
+      const [focusX, focusY] = worldToScreen(1 + model.focalLengthM, 0);
+
+      parallelExtension = pathFromSegment(
+        clipSegment(RAY_PLOT.lensX, worldToScreen(1, objectHeight)[1], focusX, focusY),
+      );
+    }
+  }
 
   if (model.outgoingAngleRad !== null && Math.abs(model.outgoingAngleRad) < Math.PI / 2 - 0.02) {
     const slope = Math.tan(model.outgoingAngleRad);
-    const [farX, farY] = worldToScreen(3, model.lensHeightM + 2 * slope);
+    const [farX, farY] = worldToScreen(3.2, model.lensHeightM + 2.2 * slope);
 
     outgoing = pathFromSegment(clipSegment(lensX, lensY, farX, farY));
 
@@ -102,29 +208,28 @@ export function buildRayGraphics(model) {
     }
   }
 
-  const guideFor = (focalX) => {
-    const [x] = worldToScreen(focalX, 0);
-
-    if (x < 50 || x > 550 || Math.abs(x - RAY_PLOT.lensX) < 16) {
-      return null;
-    }
-
-    return { d: `M${x.toFixed(2)} 68V322`, x };
-  };
-  const guides = [guideFor(1 - model.focalLengthM), guideFor(1 + model.focalLengthM)]
-    .filter(Boolean)
-    .sort((first, second) => first.x - second.x);
+  const lens = lensOutline(model.focalLengthM);
+  const ticks = focalTicks(model.focalLengthM);
+  const formedImage = imageScreen(model);
 
   return {
     incident,
     outgoing,
     extension,
+    parallelIncident,
+    parallelOutgoing,
+    parallelExtension,
+    center,
     intersection,
     source: { cx: sourceX, cy: sourceY },
-    guides: {
-      left: guides[0] ?? null,
-      right: guides[1] ?? null,
-    },
+    objectArrow:
+      Math.abs(objectHeight) < 0.004 ? "" : `M${baseX.toFixed(2)} ${baseY.toFixed(2)}L${sourceX.toFixed(2)} ${sourceY.toFixed(2)}`,
+    objectLabel: { x: baseX, y: Math.min(sourceY, baseY) - 12 },
+    lens,
+    ticks,
+    imageScreen: formedImage.screen,
+    imageArrow: formedImage.arrow,
+    imageLabelX: formedImage.labelX,
     beyondCanvas: model.intersectionXM !== null && intersection === null,
   };
 }
@@ -166,37 +271,54 @@ export function renderRayDiagram(panel, model) {
   setPath('[data-ray-segment="incident"]', graphics.incident);
   setPath('[data-ray-segment="outgoing"]', graphics.outgoing);
   setPath('[data-ray-segment="extension"]', graphics.extension);
-  setPath('[data-ray-guide="left"]', graphics.guides.left?.d ?? "");
-  setPath('[data-ray-guide="right"]', graphics.guides.right?.d ?? "");
-  ["left", "right"].forEach((side) => {
-    const label = panel.querySelector(`[data-ray-guide-label="${side}"]`);
-    const guide = graphics.guides[side];
+  setPath('[data-ray-segment="parallel-incident"]', graphics.parallelIncident);
+  setPath('[data-ray-segment="parallel-outgoing"]', graphics.parallelOutgoing);
+  setPath('[data-ray-segment="parallel-extension"]', graphics.parallelExtension);
+  setPath('[data-ray-segment="center"]', graphics.center);
+  setPath("[data-ray-lens]", graphics.lens.d);
+  setPath("[data-ray-ticks]", graphics.ticks.map((tick) => tick.d).join(""));
+  setPath("[data-ray-object]", graphics.objectArrow);
+  setPath("[data-ray-image]", graphics.imageArrow);
+  setPath("[data-ray-screen]", graphics.imageScreen);
+
+  const lens = panel.querySelector("[data-ray-lens]");
+
+  if (lens) {
+    lens.dataset.lensShape = graphics.lens.shape;
+  }
+
+  for (let index = 0; index < 4; index += 1) {
+    const label = panel.querySelector(`[data-ray-tick="${index}"]`);
+    const tick = graphics.ticks[index];
 
     if (!label) {
-      return;
+      continue;
     }
 
-    label.setAttribute("visibility", guide ? "visible" : "hidden");
-    if (guide) {
-      label.setAttribute("x", guide.x.toFixed(2));
-      label.setAttribute("y", "84");
+    label.setAttribute("visibility", tick ? "visible" : "hidden");
+    label.textContent = tick?.label ?? "";
+    if (tick) {
+      label.setAttribute("x", tick.x.toFixed(2));
+      label.setAttribute("y", String(RAY_PLOT.axisY + 20));
     }
-  });
+  }
 
-  const source = panel.querySelector("[data-ray-source-point]");
-  const stem = panel.querySelector("[data-ray-source-stem]");
-  const cap = panel.querySelector("[data-ray-source-cap]");
+  const objectLabel = panel.querySelector("[data-ray-object-label]");
 
-  if (source && stem && cap) {
-    source.setAttribute("cx", graphics.source.cx.toFixed(2));
-    source.setAttribute("cy", graphics.source.cy.toFixed(2));
-    stem.setAttribute("d", `M${graphics.source.cx.toFixed(2)} ${RAY_PLOT.axisY}V${graphics.source.cy.toFixed(2)}`);
-    cap.setAttribute(
-      "d",
-      `M${graphics.source.cx.toFixed(2)} ${graphics.source.cy.toFixed(2)}l${(
-        16 * Math.cos(model.launchAngleRad)
-      ).toFixed(2)} ${(-16 * Math.sin(model.launchAngleRad)).toFixed(2)}`,
-    );
+  if (objectLabel) {
+    objectLabel.setAttribute("visibility", graphics.objectArrow ? "visible" : "hidden");
+    objectLabel.setAttribute("x", graphics.objectLabel.x.toFixed(2));
+    objectLabel.setAttribute("y", graphics.objectLabel.y.toFixed(2));
+  }
+
+  const imageLabel = panel.querySelector("[data-ray-image-label]");
+
+  if (imageLabel) {
+    imageLabel.setAttribute("visibility", graphics.imageLabelX === null ? "hidden" : "visible");
+    if (graphics.imageLabelX !== null) {
+      imageLabel.setAttribute("x", graphics.imageLabelX.toFixed(2));
+      imageLabel.setAttribute("y", String(RAY_PLOT.bounds.yMax - 6));
+    }
   }
 
   const mark = panel.querySelector("[data-ray-intersection]");
@@ -207,17 +329,6 @@ export function renderRayDiagram(panel, model) {
       mark.setAttribute("cx", graphics.intersection.cx.toFixed(2));
       mark.setAttribute("cy", graphics.intersection.cy.toFixed(2));
     }
-  }
-
-  const lensArrows = panel.querySelector(".lens-arrows");
-
-  if (lensArrows) {
-    lensArrows.setAttribute(
-      "d",
-      model.focalLengthM >= 0
-        ? "M370 70L382 52L394 70M370 320L382 338L394 320"
-        : "M370 52L382 70L394 52M370 338L382 320L394 338",
-    );
   }
 
   const status = panel.querySelector("[data-ray-status]");
