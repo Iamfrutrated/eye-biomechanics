@@ -1,8 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { RAY_DEFAULTS, RAY_LIMITS, calculateRay } from "../optics/calculations.js";
-import { applyRayDefaults, readRayControlValues } from "../optics/controls.js";
+import {
+  RAY_DEFAULTS,
+  RAY_LIMITS,
+  calculateRay,
+  constructionImage,
+  indirectSlope,
+  objectSideFocalX,
+} from "../optics/calculations.js";
+import { applyRayDefaults, readRayControlValues, zoomView } from "../optics/controls.js";
 import { buildRayGraphics } from "../optics/display.js";
 
 test("paraxial transfer determines the default outgoing ray", () => {
@@ -48,40 +55,50 @@ test("zero focal length, parallel rays, and steep output stay finite", () => {
   assert.equal(buildRayGraphics(steep).outgoing, "");
 });
 
-test("full-range angle remains drawable while marked outside paraxial validity", () => {
-  const ray = calculateRay({
-    focalLengthM: -0.45,
-    launchAngleRad: -Math.PI / 3,
-    sourceHeightM: -0.2,
-  });
-  const graphics = buildRayGraphics(ray);
+test("aimed rays stay inside the lens across the source-height range", () => {
+  for (const sourceHeightM of [RAY_LIMITS.minSourceHeightM, RAY_LIMITS.maxSourceHeightM]) {
+    for (const launchAngleRad of [RAY_LIMITS.minLaunchAngleRad, RAY_LIMITS.maxLaunchAngleRad]) {
+      const ray = calculateRay({ ...RAY_DEFAULTS, sourceHeightM, launchAngleRad });
 
-  assert.equal(ray.launchAngleRad, -Math.PI / 3);
-  assert.equal(ray.paraxialValid, false);
-  assert.equal(ray.missesAperture, true);
-  assert.equal(typeof graphics.incident, "string");
-  assert.equal(typeof graphics.outgoing, "string");
+      assert.ok(Math.abs(ray.lensHeightM) < RAY_LIMITS.apertureHalfHeightM * 0.8);
+      assert.equal(ray.missesAperture, false);
+    }
+  }
 });
 
-test("shaped lens, focal ticks, and real image follow the thin-lens drawing", () => {
+test("the indirect ray goes straight through F and the image is the ray crossing", () => {
   const convex = calculateRay(RAY_DEFAULTS);
-  const convexGraphics = buildRayGraphics(convex);
-  const concave = calculateRay({ focalLengthM: -0.45, launchAngleRad: 0, sourceHeightM: 0.12 });
-  const concaveGraphics = buildRayGraphics(concave);
+  const graphics = buildRayGraphics(convex);
+  const focalX = objectSideFocalX(convex.focalLengthM);
+  const slope = indirectSlope(convex.sourceHeightM, convex.focalLengthM);
+  const crossing = constructionImage(convex);
   const denominator = 1 / RAY_DEFAULTS.focalLengthM - 1 / RAY_LIMITS.lensXM;
 
-  assert.equal(convexGraphics.lens.shape, "convex");
-  assert.match(convexGraphics.lens.d, /C/);
-  assert.equal(concaveGraphics.lens.shape, "concave");
-  assert.ok(convex.imageReal);
+  assert.ok(Math.abs(convex.sourceHeightM + slope * focalX) < 1e-12);
+  assert.equal(graphics.lens.shape, "convex");
+  assert.match(graphics.indirect, /^M/);
+  assert.equal(graphics.parallelIncident, undefined);
+  assert.equal(graphics.center, undefined);
+  assert.ok(Math.abs(convex.constructionXM - crossing.constructionXM) < 1e-12);
+  assert.ok(Math.abs(convex.constructionYM - crossing.constructionYM) < 1e-12);
+  assert.match(graphics.imageArrow, /^M/);
+  assert.equal(graphics.imageScreen, undefined);
   assert.ok(Math.abs(1 / convex.imageDistanceM - denominator) < 1e-9);
-  assert.equal(concave.imageReal, false);
-  assert.ok(convexGraphics.ticks.some((tick) => tick.label === "F"));
-  assert.ok(convexGraphics.ticks.some((tick) => tick.label === "2F"));
-  assert.match(convexGraphics.objectArrow, /^M/);
-  assert.match(convexGraphics.imageArrow, /^M/);
-  assert.match(convexGraphics.imageScreen, /^M/);
-  assert.equal(concaveGraphics.imageArrow, "");
+  assert.ok(convexGraphicsHasNoScreen(graphics));
+});
+
+function convexGraphicsHasNoScreen(graphics) {
+  return graphics.imageScreen === undefined && !("imageScreen" in graphics && graphics.imageScreen);
+}
+
+test("concave and convex lenses use the same thin-lens bend with opposite signs", () => {
+  const concave = calculateRay({ focalLengthM: -0.45, launchAngleRad: 0.03, sourceHeightM: 0.1 });
+  const graphics = buildRayGraphics(concave);
+
+  assert.equal(graphics.lens.shape, "concave");
+  assert.ok(concave.outgoingAngleRad > 0);
+  assert.match(graphics.indirect, /^M/);
+  assert.match(graphics.incident, /^M/);
 });
 
 test("a diverging lens sends the default-height ray to a virtual intersection", () => {
@@ -91,6 +108,17 @@ test("a diverging lens sends the default-height ray to a virtual intersection", 
   assert.equal(ray.intersectionKind, "virtual");
   assert.ok(ray.intersectionXM < RAY_LIMITS.lensXM);
   assert.match(buildRayGraphics(ray).extension, /^M/);
+});
+
+test("wheel zoom keeps the pointer fixed and can zoom out", () => {
+  const start = { scale: 1, x: 0, y: 0 };
+  const zoomedOut = zoomView(start, 100, 50, 120);
+  const zoomedIn = zoomView(start, 100, 50, -120);
+
+  assert.ok(zoomedOut.scale < start.scale);
+  assert.ok(zoomedIn.scale > start.scale);
+  assert.ok(Math.abs(100 - (100 - zoomedOut.x) / zoomedOut.scale) < 1e-9);
+  assert.ok(Math.abs(50 - (50 - zoomedOut.y) / zoomedOut.scale) < 1e-9);
 });
 
 test("non-numeric ray controls are rejected", () => {

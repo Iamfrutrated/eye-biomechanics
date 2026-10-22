@@ -1,10 +1,12 @@
+import { indirectSlope } from "./calculations.js";
+
 export const RAY_PLOT = Object.freeze({
-  sourceX: 150,
-  lensX: 290,
+  sourceX: 72,
+  lensX: 154,
   axisY: 188,
-  scaleX: 140,
-  scaleY: 860,
-  bounds: Object.freeze({ xMin: 28, yMin: 36, xMax: 572, yMax: 332 }),
+  scaleX: 82,
+  scaleY: 400,
+  bounds: Object.freeze({ xMin: 16, yMin: 24, xMax: 584, yMax: 400 }),
 });
 
 function formatSigned(value, fractionDigits) {
@@ -82,32 +84,31 @@ function screenSegment(x0, y0, x1, y1) {
 
 function lensOutline(focalLengthM) {
   const [cx, cy] = worldToScreen(1, 0);
-  const height = 112;
+  const height = 0.36 * RAY_PLOT.scaleY;
+  const thin = Math.max(8, height * 0.1);
+  const top = cy - height;
+  const bottom = cy + height;
 
   if (Math.abs(focalLengthM) < 1e-9) {
     return {
       shape: "none",
-      d: `M${cx - 6} ${cy - height}H${cx + 6}V${cy + height}H${cx - 6}Z`,
+      d: `M${cx - 4} ${top}H${cx + 4}V${bottom}H${cx - 4}Z`,
     };
   }
 
   if (focalLengthM > 0) {
-    const bulge = 48;
-
     return {
       shape: "convex",
-      d: `M${cx} ${cy - height} C${cx - bulge} ${cy - 72}, ${cx - bulge} ${cy + 72}, ${cx} ${cy + height} C${cx + bulge} ${cy + 72}, ${cx + bulge} ${cy - 72}, ${cx} ${cy - height}Z`,
+      d: `M${cx} ${top} C${cx - thin} ${cy - height * 0.55}, ${cx - thin} ${cy + height * 0.55}, ${cx} ${bottom} C${cx + thin} ${cy + height * 0.55}, ${cx + thin} ${cy - height * 0.55}, ${cx} ${top}Z`,
     };
   }
 
-  const rim = 22;
-  const waist = 7;
-  const top = cy - height;
-  const bottom = cy + height;
+  const rim = thin * 0.95;
+  const waist = thin * 0.42;
 
   return {
     shape: "concave",
-    d: `M${cx - rim} ${top} C${cx - waist} ${top + 34}, ${cx - waist} ${cy - 22}, ${cx - waist} ${cy} C${cx - waist} ${cy + 22}, ${cx - waist} ${bottom - 34}, ${cx - rim} ${bottom} L${cx + rim} ${bottom} C${cx + waist} ${bottom - 34}, ${cx + waist} ${cy + 22}, ${cx + waist} ${cy} C${cx + waist} ${cy - 22}, ${cx + waist} ${top + 34}, ${cx + rim} ${top}Z`,
+    d: `M${cx - rim} ${top} C${cx - waist} ${top + height * 0.28}, ${cx - waist} ${cy - height * 0.18}, ${cx - waist} ${cy} C${cx - waist} ${cy + height * 0.18}, ${cx - waist} ${bottom - height * 0.28}, ${cx - rim} ${bottom} L${cx + rim} ${bottom} C${cx + waist} ${bottom - height * 0.28}, ${cx + waist} ${cy + height * 0.18}, ${cx + waist} ${cy} C${cx + waist} ${cy - height * 0.18}, ${cx + waist} ${top + height * 0.28}, ${cx + rim} ${top}Z`,
   };
 }
 
@@ -139,104 +140,78 @@ function focalTicks(focalLengthM) {
     .filter(Boolean);
 }
 
-function imageScreen(model) {
-  if (!model.imageReal || model.imageXM === null) {
-    return { screen: "", arrow: "", labelX: null };
+function imageArrow(model) {
+  if (model.constructionXM === null || model.constructionYM === null) {
+    return { arrow: "", labelX: null, mark: null };
   }
 
-  const [planeX, planeY] = worldToScreen(model.imageXM, 0);
+  const [planeX, planeY] = worldToScreen(model.constructionXM, 0);
+  const [tipX, tipY] = worldToScreen(model.constructionXM, model.constructionYM);
+  const visible =
+    planeX > RAY_PLOT.bounds.xMin &&
+    planeX < RAY_PLOT.bounds.xMax &&
+    tipY > RAY_PLOT.bounds.yMin - 40 &&
+    tipY < RAY_PLOT.bounds.yMax + 40;
 
-  if (planeX < RAY_PLOT.bounds.xMin + 16 || planeX > RAY_PLOT.bounds.xMax - 16) {
-    return { screen: "", arrow: "", labelX: null };
+  if (!visible || Math.abs(model.constructionYM) < 0.004) {
+    return { arrow: "", labelX: visible ? planeX : null, mark: visible ? { cx: tipX, cy: tipY } : null };
   }
-
-  const [tipX, tipY] = worldToScreen(model.imageXM, model.imageHeightM ?? 0);
-  const top = RAY_PLOT.axisY - 78;
-  const bottom = RAY_PLOT.axisY + 78;
 
   return {
-    screen: `M${(planeX - 16).toFixed(2)} ${top}L${(planeX + 10).toFixed(2)} ${top + 16}L${(planeX + 22).toFixed(2)} ${bottom - 8}L${(planeX - 8).toFixed(2)} ${bottom}Z`,
-    arrow: Math.abs(model.imageHeightM ?? 0) < 0.004 ? "" : `M${planeX.toFixed(2)} ${planeY.toFixed(2)}L${tipX.toFixed(2)} ${tipY.toFixed(2)}`,
+    arrow: `M${planeX.toFixed(2)} ${planeY.toFixed(2)}L${tipX.toFixed(2)} ${tipY.toFixed(2)}`,
     labelX: planeX,
+    mark: { cx: tipX, cy: tipY },
   };
 }
 
 export function buildRayGraphics(model) {
-  const [sourceX, sourceY] = worldToScreen(0, model.sourceHeightM);
+  const objectHeight = model.sourceHeightM;
+  const [sourceX, sourceY] = worldToScreen(0, objectHeight);
   const [lensX, lensY] = worldToScreen(1, model.lensHeightM);
   const [baseX, baseY] = worldToScreen(0, 0);
+  const straightSlope = indirectSlope(objectHeight, model.focalLengthM);
+  const indirect = screenSegment(
+    -0.4,
+    objectHeight + straightSlope * -0.4,
+    6.4,
+    objectHeight + straightSlope * 6.4,
+  );
   const incident = pathFromSegment(clipSegment(sourceX, sourceY, lensX, lensY));
   let outgoing = "";
   let extension = "";
-  let intersection = null;
-  const objectHeight = model.sourceHeightM;
-  const parallelIncident = Math.abs(objectHeight) < 0.004 ? "" : screenSegment(0, objectHeight, 1, objectHeight);
-  let parallelOutgoing = "";
-  let parallelExtension = "";
-  const center =
-    Math.abs(objectHeight) < 0.004
-      ? ""
-      : screenSegment(0, objectHeight, 2.6, objectHeight + 1.6 * -objectHeight);
-
-  if (Math.abs(model.focalLengthM) >= 1e-9 && Math.abs(objectHeight) >= 0.004) {
-    const slope = -objectHeight / model.focalLengthM;
-    const [farX, farY] = worldToScreen(3, objectHeight + 2 * slope);
-
-    parallelOutgoing = pathFromSegment(clipSegment(RAY_PLOT.lensX, worldToScreen(1, objectHeight)[1], farX, farY));
-
-    if (model.focalLengthM < 0) {
-      const [focusX, focusY] = worldToScreen(1 + model.focalLengthM, 0);
-
-      parallelExtension = pathFromSegment(
-        clipSegment(RAY_PLOT.lensX, worldToScreen(1, objectHeight)[1], focusX, focusY),
-      );
-    }
-  }
 
   if (model.outgoingAngleRad !== null && Math.abs(model.outgoingAngleRad) < Math.PI / 2 - 0.02) {
     const slope = Math.tan(model.outgoingAngleRad);
-    const [farX, farY] = worldToScreen(3.2, model.lensHeightM + 2.2 * slope);
+    const [farX, farY] = worldToScreen(6.4, model.lensHeightM + 5.4 * slope);
 
     outgoing = pathFromSegment(clipSegment(lensX, lensY, farX, farY));
 
-    if (model.intersectionKind === "virtual" && model.intersectionXM !== null) {
-      const [backX, backY] = worldToScreen(model.intersectionXM, 0);
+    if (model.constructionXM !== null && model.constructionXM < 1) {
+      const [backX, backY] = worldToScreen(model.constructionXM, model.constructionYM);
 
       extension = pathFromSegment(clipSegment(lensX, lensY, backX, backY));
     }
   }
 
-  if (model.intersectionXM !== null) {
-    const [markX, markY] = worldToScreen(model.intersectionXM, 0);
-
-    if (insidePlot(markX, markY)) {
-      intersection = { cx: markX, cy: markY };
-    }
-  }
-
-  const lens = lensOutline(model.focalLengthM);
-  const ticks = focalTicks(model.focalLengthM);
-  const formedImage = imageScreen(model);
+  const formedImage = imageArrow(model);
 
   return {
     incident,
     outgoing,
     extension,
-    parallelIncident,
-    parallelOutgoing,
-    parallelExtension,
-    center,
-    intersection,
+    indirect,
+    intersection: formedImage.mark,
     source: { cx: sourceX, cy: sourceY },
     objectArrow:
-      Math.abs(objectHeight) < 0.004 ? "" : `M${baseX.toFixed(2)} ${baseY.toFixed(2)}L${sourceX.toFixed(2)} ${sourceY.toFixed(2)}`,
+      Math.abs(objectHeight) < 0.004
+        ? ""
+        : `M${baseX.toFixed(2)} ${baseY.toFixed(2)}L${sourceX.toFixed(2)} ${sourceY.toFixed(2)}`,
     objectLabel: { x: baseX, y: Math.min(sourceY, baseY) - 12 },
-    lens,
-    ticks,
-    imageScreen: formedImage.screen,
+    lens: lensOutline(model.focalLengthM),
+    ticks: focalTicks(model.focalLengthM),
     imageArrow: formedImage.arrow,
     imageLabelX: formedImage.labelX,
-    beyondCanvas: model.intersectionXM !== null && intersection === null,
+    beyondCanvas: model.constructionXM !== null && formedImage.labelX === null,
   };
 }
 
@@ -274,18 +249,14 @@ export function renderRayDiagram(panel, model) {
     }
   };
 
+  setPath('[data-ray-segment="indirect"]', graphics.indirect);
   setPath('[data-ray-segment="incident"]', graphics.incident);
   setPath('[data-ray-segment="outgoing"]', graphics.outgoing);
   setPath('[data-ray-segment="extension"]', graphics.extension);
-  setPath('[data-ray-segment="parallel-incident"]', graphics.parallelIncident);
-  setPath('[data-ray-segment="parallel-outgoing"]', graphics.parallelOutgoing);
-  setPath('[data-ray-segment="parallel-extension"]', graphics.parallelExtension);
-  setPath('[data-ray-segment="center"]', graphics.center);
   setPath("[data-ray-lens]", graphics.lens.d);
   setPath("[data-ray-ticks]", graphics.ticks.map((tick) => tick.d).join(""));
   setPath("[data-ray-object]", graphics.objectArrow);
   setPath("[data-ray-image]", graphics.imageArrow);
-  setPath("[data-ray-screen]", graphics.imageScreen);
 
   const lens = panel.querySelector("[data-ray-lens]");
 

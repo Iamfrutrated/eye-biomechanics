@@ -187,9 +187,10 @@
           >
             <title id="ray-canvas-title">Interactive thin-lens ray diagram</title>
             <desc id="ray-canvas-description">
-              An upright object arrow stands on the optical axis to the left of a shaped thin
-              lens. F and 2F ticks mark both sides. Incident and refracted rays update with the
-              controls, and a real image appears on a screen when the thin-lens image is real.
+              Two rays form the image. The indirect ray is straight and passes through focal
+              point F. The manipulated ray is aimed with the launch angle and source height,
+              bends by the thin-lens rule, and meets the indirect ray at the image arrow.
+              Scroll to zoom and drag to pan.
             </desc>
             <defs>
               <linearGradient id="ray-lens-fill" x1="0" y1="0" x2="1" y2="0">
@@ -212,17 +213,11 @@
               </clipPath>
             </defs>
 
-            <rect x="36" y="40" width="528" height="310" rx="8" class="ray-plot-bg" />
-            <g clip-path="url(#ray-viewport-clip)">
-              <path d="M28 188H572" class="ray-axis" />
-
-              <path data-ray-screen class="image-screen" />
+            <rect x="0" y="0" width="600" height="420" class="ray-plot-bg" />
+            <g data-ray-scene>
+              <path data-ray-axis class="ray-axis" d="M-80 188H760" />
               <path data-ray-lens class="lens-body" />
-
-              <path data-ray-segment="parallel-incident" class="ray-segment principal-ray" />
-              <path data-ray-segment="parallel-outgoing" class="ray-segment principal-ray" />
-              <path data-ray-segment="parallel-extension" class="ray-extension" />
-              <path data-ray-segment="center" class="ray-segment principal-ray" />
+              <path data-ray-segment="indirect" class="ray-segment indirect-ray" />
               <path data-ray-segment="incident" class="ray-segment incident-ray" />
               <path data-ray-segment="outgoing" class="ray-segment outgoing-ray" />
               <path data-ray-segment="extension" class="ray-extension" />
@@ -246,6 +241,7 @@
             <text x="550" y="374" class="axis-label">+x</text>
             <text x="46" y="374" class="axis-label">y = 0</text>
           </svg>
+          <p class="ray-gesture">Scroll to zoom, including zoom out. Drag to pan.</p>
 
           <form class="ray-controls">
             <div class="ray-control">
@@ -277,14 +273,14 @@
                 type="range"
                 id="ray-launch-angle"
                 name="launchAngleRad"
-                min="-1.047198"
-                max="1.047198"
-                step="0.000001"
+                min="-0.06"
+                max="0.06"
+                step="0.0001"
                 value="0"
                 aria-describedby="ray-validity-warning"
               />
               <div class="range-ends" aria-hidden="true">
-                <span>−π/3 down</span><span>0 horizontal</span><span>+π/3 up</span>
+                <span>−0.06 rad</span><span>0 horizontal</span><span>+0.06 rad</span>
               </div>
             </div>
 
@@ -327,9 +323,9 @@
           </dl>
 
           <p class="validity-warning" id="ray-validity-warning">
-            <strong>Validity limit:</strong> this is a paraxial teaching model. Angles beyond
-            ±0.175 rad (about ±10°)—including much of the available ±π/3 range—are shown for
-            exploration but are not physically reliable predictions.
+            <strong>Validity limit:</strong> this is a paraxial teaching model. If the outgoing
+            angle goes beyond about ±0.175 rad (±10°), the drawing is exploratory and not a
+            reliable physical prediction.
           </p>
           <p class="ray-status" data-ray-status aria-live="polite">
             Default ray reaches the lens and intersects the axis.

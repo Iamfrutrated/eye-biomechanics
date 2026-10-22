@@ -67,13 +67,13 @@ export const RAY_DEFAULTS = Object.freeze({
 export const RAY_LIMITS = Object.freeze({
   minFocalLengthM: -1,
   maxFocalLengthM: 1,
-  minLaunchAngleRad: -Math.PI / 3,
-  maxLaunchAngleRad: Math.PI / 3,
+  minLaunchAngleRad: -0.06,
+  maxLaunchAngleRad: 0.06,
   minSourceHeightM: -0.2,
   maxSourceHeightM: 0.2,
   paraxialLimitRad: 0.175,
   lensXM: 1,
-  apertureHalfHeightM: 0.26,
+  apertureHalfHeightM: 0.36,
 });
 
 function finiteValue(value, label) {
@@ -166,6 +166,12 @@ export function calculateRay(input) {
     Math.abs(launchAngleRad) <= RAY_LIMITS.paraxialLimitRad &&
     (outgoingAngleRad === null || Math.abs(outgoingAngleRad) <= RAY_LIMITS.paraxialLimitRad);
   const image = imageOfObject(focalLengthM, sourceHeightM);
+  const constructed = constructionImage({
+    sourceHeightM,
+    focalLengthM,
+    lensHeightM,
+    outgoingAngleRad,
+  });
 
   return Object.freeze({
     ...values,
@@ -176,8 +182,60 @@ export function calculateRay(input) {
     missesAperture,
     paraxialValid,
     ...image,
+    ...constructed,
     status,
   });
+}
+
+/** Object-side focal point. The indirect ray is the straight line through this point. */
+export function objectSideFocalX(focalLengthM) {
+  if (Math.abs(focalLengthM) < 1e-9) {
+    return null;
+  }
+
+  return RAY_LIMITS.lensXM - Math.abs(focalLengthM);
+}
+
+/**
+ * Undeviated ray through the object tip and object-side F.
+ * Returns the slope dy/dx. A null focal point falls back to the lens center.
+ */
+export function indirectSlope(sourceHeightM, focalLengthM) {
+  const focalX = objectSideFocalX(focalLengthM);
+
+  if (focalX === null || Math.abs(focalX) < 1e-6) {
+    return -sourceHeightM / RAY_LIMITS.lensXM;
+  }
+
+  return (0 - sourceHeightM) / focalX;
+}
+
+/**
+ * Image tip is the crossing of the undeviated ray and the refracted aimed ray.
+ * The aimed ray still uses θ_out = θ_in − y/f.
+ */
+export function constructionImage({ sourceHeightM, focalLengthM, lensHeightM, outgoingAngleRad }) {
+  const empty = { constructionXM: null, constructionYM: null };
+
+  if (outgoingAngleRad === null || Math.abs(outgoingAngleRad) >= Math.PI / 2 - 0.02) {
+    return empty;
+  }
+
+  const refractedSlope = Math.tan(outgoingAngleRad);
+  const straightSlope = indirectSlope(sourceHeightM, focalLengthM);
+  const slopeGap = straightSlope - refractedSlope;
+
+  if (Math.abs(slopeGap) < 1e-6) {
+    return empty;
+  }
+
+  const constructionXM =
+    (lensHeightM - refractedSlope * RAY_LIMITS.lensXM - sourceHeightM) / slopeGap;
+
+  return {
+    constructionXM,
+    constructionYM: sourceHeightM + straightSlope * constructionXM,
+  };
 }
 
 /**

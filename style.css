@@ -391,6 +391,18 @@ h1 {
   border: 1px solid rgba(213, 226, 215, 0.14);
   border-radius: 0.8rem;
   background: #091419;
+  cursor: grab;
+  touch-action: none;
+}
+
+.ray-canvas.is-panning {
+  cursor: grabbing;
+}
+
+.ray-gesture {
+  margin: 0;
+  color: #8ea19c;
+  font-size: 0.75rem;
 }
 
 .ray-plot-bg {
@@ -419,14 +431,18 @@ h1 {
   stroke-width: 1.6;
 }
 
-.lens-body {
-  fill: url("#ray-lens-fill");
-  stroke: #d7fbff;
-  stroke-width: 2.4;
+.lens-body,
+.lens-body[data-lens-shape="concave"],
+.lens-body[data-lens-shape="convex"] {
+  fill: rgba(176, 214, 222, 0.72);
+  stroke: rgba(214, 236, 240, 0.55);
+  stroke-width: 1.4;
 }
 
-.lens-body[data-lens-shape="concave"] {
-  fill: rgba(120, 196, 214, 0.28);
+.indirect-ray {
+  stroke: #f4f7f2;
+  stroke-width: 2.2;
+  marker-end: url("#ray-arrow");
 }
 
 .object-arrow,
