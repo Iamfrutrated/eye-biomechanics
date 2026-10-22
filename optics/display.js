@@ -1,10 +1,10 @@
 import { indirectSlope } from "./calculations.js";
 
 export const RAY_PLOT = Object.freeze({
-  sourceX: 72,
-  lensX: 154,
+  sourceX: 56,
+  lensX: 126,
   axisY: 188,
-  scaleX: 82,
+  scaleX: 70,
   scaleY: 400,
   bounds: Object.freeze({ xMin: 16, yMin: 24, xMax: 584, yMax: 400 }),
 });
